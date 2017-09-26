@@ -6,14 +6,15 @@
  */
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.TreeSet;
 
 public class PuzzleState {
     
     /** The arrangement of the puzzle tiles **/
-    public byte[] tiles = new byte[9];
+    private byte[] tiles = new byte[9];
     
     /** Whether or not this state is the goal **/
-    public boolean isGoalState = false;
+    private boolean isGoalState = false;
     
     /**
      * Constructs the goal PuzzleState
@@ -29,8 +30,8 @@ public class PuzzleState {
     public PuzzleState(String tiles) {
         validateTileString(tiles);
         this.isGoalState = ("b12 345 678" == tiles);
-        byte i = 0;
-        byte j = 0;
+        int i = 0;
+        int j = 0;
         while (i < tiles.length()) {
             byte tile = (byte) Character.getNumericValue(tiles.charAt(i));
             if (11 == tile) {
@@ -42,7 +43,47 @@ public class PuzzleState {
             i++;
         }
     }
-    
+
+    /**
+     * Returns a boolean that is true if the state is the goal state
+     * @return  logical value of the goal state
+     */
+    public boolean isGoalState() {
+        return this.isGoalState;
+    }
+
+    /**
+     * Returns a set of PuzzleStates that can be reached from this state
+     * @return  children of the state
+     */
+    public TreeSet<PuzzleState> generateChildren() {
+         TreeSet<PuzzleState> children = new TreeSet<PuzzleState>();
+
+        // find the empty tile
+        int emptyIndex;
+        for (int i = 0; i < tiles.length; i++) {
+            if (0 == tiles[i]) {
+                emptyIndex = i;
+            }
+        }
+
+        // swap the empty tile with tiles orthoganal to it
+        if (!isLeftColumn(emptyIndex)) {
+            children.add(swapChars(tiles, emptyIndex, emptyIndex - 1));
+        }
+        if (!isRightColumn(emptyIndex)) {
+            children.add(swapChars(tiles, emptyIndex, emptyIndex + 1));
+        }
+        if (!isTopRow(emptyIndex)) {
+            children.add(swapChars(tiles, emptyIndex, emptyIndex - 3))
+        }
+        if (!isBottomRow(emptyIndex)) {
+            children.add(swapChars(tiles, emptyIndex, emptyIndex + 3))
+        }
+
+        return children;
+    }
+
     /**
      * Returns a String representation of the puzzle state
      * @return  game String
@@ -75,20 +116,45 @@ public class PuzzleState {
         sb.append(" \u2502\n\u2514---\u2534---\u2534---\u2518");
         return sb.toString();
     }
-    
+
+    private boolean isLeftColumn(int i) {
+        return (0 == i % 3);
+    }
+
+    private boolean isRightColumn(int i) {
+        return (0 == (i - 2) % 3);
+    }
+
+    private boolean isTopRow(int i) {
+        return (0 <= i && i <= 3);
+    }
+
+    private boolean isBottomRow(int i) {
+        return (6 <= i && i <= 8);
+    }
+
+    private String swapChars(String s, int i, int j) {
+        char[] c = s.toCharArray();
+
+        char temp = c[i];
+        c[i] = c[j];
+        c[j] = temp;
+
+        return new String(c);
+    }
+
     /**
-     * Returns a String representation of the Solitaire game
-     * @return  game String
+     * Throws an exception if the given tile string is not valid
      */
-    public static void validateTileString(String tiles) {
+    private void validateTileString(String tiles) {
         class TileStringException extends RuntimeException {
             TileStringException() {
                 super("The tile string is not in the correct format");
             }
         }
-        Character[] tileChars = { 'b','1','2','3','4','5','6','7','8' };
-        HashSet<Character> validTiles =
-            new HashSet<Character>(Arrays.asList(tileChars));
+        Character[] validTiles = { 'b','1','2','3','4','5','6','7','8' };
+        HashSet<Character> remainingTiles =
+            new HashSet<Character>(Arrays.asList(validTiles));
         
         if (11 < tiles.length()) {
             throw new TileStringException();
@@ -100,11 +166,11 @@ public class PuzzleState {
                     throw new TileStringException();
                 }
             }
-            else if (!validTiles.remove(tiles.charAt(i))) {
+            else if (!remainingTiles.remove(tiles.charAt(i))) {
                 throw new TileStringException();
             }
         }
-        if (!validTiles.isEmpty()) {
+        if (!remainingTiles.isEmpty()) {
             throw new TileStringException();
         }
     }
