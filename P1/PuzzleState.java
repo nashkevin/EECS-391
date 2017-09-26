@@ -2,7 +2,7 @@
  * PuzzleState
  *
  * @author   Kevin Nash (kjn33)
- * @version  2017.9.25
+ * @version  2017.9.26
  */
 import java.util.Arrays;
 import java.util.HashSet;
@@ -45,7 +45,7 @@ public class PuzzleState {
     }
 
     /**
-     * Returns a boolean that is true if the state is the goal state
+     * Returns true if the state is the goal state
      * @return  logical value of the goal state
      */
     public boolean isGoalState() {
@@ -118,19 +118,19 @@ public class PuzzleState {
     }
 
     private boolean isLeftColumn(int i) {
-        return (0 == i % 3);
+        return (0 == i % 4);
     }
 
     private boolean isRightColumn(int i) {
-        return (0 == (i - 2) % 3);
+        return (0 == (i - 2) % 4);
     }
 
     private boolean isTopRow(int i) {
-        return (0 <= i && i <= 3);
+        return (0 <= i && i <= 2);
     }
 
     private boolean isBottomRow(int i) {
-        return (6 <= i && i <= 8);
+        return (8 <= i && i <= 10);
     }
 
     private String swapChars(String s, int i, int j) {
