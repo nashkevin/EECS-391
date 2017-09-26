@@ -16,7 +16,14 @@ public class PuzzleState {
     public boolean isGoalState = false;
     
     /**
-     * Constructs a Card given a literal Face and Suit and specifies flip status
+     * Constructs the goal PuzzleState
+     */
+    public PuzzleState() {
+        this("b12 345 678");
+    }
+    
+    /**
+     * Constructs a PuzzleState given an arrangement of tiles
      * @param  tiles  the tile arrangement in form "b12 345 678"
      */
     public PuzzleState(String tiles) {
