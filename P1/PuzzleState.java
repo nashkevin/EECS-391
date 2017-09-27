@@ -4,84 +4,45 @@
  * @author   Kevin Nash (kjn33)
  * @version  2017.9.26
  */
+import java.lang.Math;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.TreeSet;
 
-public class PuzzleState {
-    
+public class PuzzleState implements Comparable<PuzzleState> {
+
+    public enum Heuristic { COUNT_MISPLACED, SUM_DISTANCES };
+
     /** The arrangement of the puzzle tiles **/
-    private byte[] tiles = new byte[9];
-    
-    /** Whether or not this state is the goal **/
-    private boolean isGoalState = false;
-    
-    /**
-     * Constructs the goal PuzzleState
-     */
-    public PuzzleState() {
-        this("b12 345 678");
-    }
-    
+    private String tiles;
+
+    /** g **/
+    private byte cost = Byte.MAX_VALUE;
+
+    private Heuristic heuristic;
+
     /**
      * Constructs a PuzzleState given an arrangement of tiles
-     * @param  tiles  the tile arrangement in form "b12 345 678"
+     * @param  tiles      the tile arrangement in form "b12 345 678"
+     * @param  heuristic  TODO: describe
      */
-    public PuzzleState(String tiles) {
+    public PuzzleState(String tiles, Heuristic heuristic) {
         validateTileString(tiles);
-        this.isGoalState = ("b12 345 678" == tiles);
-        int i = 0;
-        int j = 0;
-        while (i < tiles.length()) {
-            byte tile = (byte) Character.getNumericValue(tiles.charAt(i));
-            if (11 == tile) {
-                this.tiles[j++] = 0;
-            }
-            else if (0 < (i + 1) % 4) {
-                this.tiles[j++] = tile;
-            }
-            i++;
-        }
+        this.tiles = tiles;
+        this.heuristic = heuristic;
+        calculateCost();
     }
 
     /**
-     * Returns true if the state is the goal state
-     * @return  logical value of the goal state
+     * Returns the cost associated with this state
+     * @return  cost
      */
-    public boolean isGoalState() {
-        return this.isGoalState;
+    public byte getCost() {
+        return this.cost;
     }
 
-    /**
-     * Returns a set of PuzzleStates that can be reached from this state
-     * @return  children of the state
-     */
-    public TreeSet<PuzzleState> generateChildren() {
-         TreeSet<PuzzleState> children = new TreeSet<PuzzleState>();
-
-        // find the empty tile
-        int emptyIndex;
-        for (int i = 0; i < tiles.length; i++) {
-            if (0 == tiles[i]) {
-                emptyIndex = i;
-            }
-        }
-
-        // swap the empty tile with tiles orthoganal to it
-        if (!isLeftColumn(emptyIndex)) {
-            children.add(swapChars(tiles, emptyIndex, emptyIndex - 1));
-        }
-        if (!isRightColumn(emptyIndex)) {
-            children.add(swapChars(tiles, emptyIndex, emptyIndex + 1));
-        }
-        if (!isTopRow(emptyIndex)) {
-            children.add(swapChars(tiles, emptyIndex, emptyIndex - 3))
-        }
-        if (!isBottomRow(emptyIndex)) {
-            children.add(swapChars(tiles, emptyIndex, emptyIndex + 3))
-        }
-
-        return children;
+    public String getTiles() {
+        return this.tiles;
     }
 
     /**
@@ -90,31 +51,87 @@ public class PuzzleState {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\u250C---\u252C---\u252C---\u2510\n\u2502 ");
-        sb.append((0 < tiles[0]) ? tiles[0] : " ");
-        sb.append(" \u2502 ");
-        sb.append((0 < tiles[1]) ? tiles[1] : " ");
-        sb.append(" \u2502 ");
-        sb.append((0 < tiles[2]) ? tiles[2] : " ");
-        sb.append(" \u2502");
-        sb.append("\n\u251C---\u253C---\u253C---\u2524");
-        sb.append("\n\u2502 ");
-        sb.append((0 < tiles[3]) ? tiles[3] : " ");
-        sb.append(" \u2502 ");
-        sb.append((0 < tiles[4]) ? tiles[4] : " ");
-        sb.append(" \u2502 ");
-        sb.append((0 < tiles[5]) ? tiles[5] : " ");
-        sb.append(" \u2502");
-        sb.append("\n\u251C---\u253C---\u253C---\u2524");
-        sb.append("\n\u2502 ");
-        sb.append((0 < tiles[6]) ? tiles[6] : " ");
-        sb.append(" \u2502 ");
-        sb.append((0 < tiles[7]) ? tiles[7] : " ");
-        sb.append(" \u2502 ");
-        sb.append((0 < tiles[8]) ? tiles[8] : " ");
-        sb.append(" \u2502\n\u2514---\u2534---\u2534---\u2518");
-        return sb.toString();
+        return this.tiles.replace(' ', '\n');
+    }
+
+    @Override
+    public int compareTo(PuzzleState that) {
+        // offset by 1 so that TreeSet does not falsely abandon "duplicates"
+        return (this.cost - that.cost) + 1;
+    }
+
+    public boolean equals(PuzzleState that) {
+        return this.tiles.equals(that.getTiles());
+    }
+
+    /**
+     * Returns a set of PuzzleStates that can be reached from this state
+     * @return  children of the state
+     */
+    public TreeSet<PuzzleState> generateChildren() {
+        TreeSet<PuzzleState> children = new TreeSet<PuzzleState>();
+
+        // find the empty tile
+        int emptyIndex = -1;
+        for (int i = 0; i < tiles.length(); i++) {
+            if ('b' == tiles.charAt(i)) {
+                emptyIndex = i;
+            }
+        }
+
+        // swap the empty tile with tiles orthoganal to it
+        if (!isLeftColumn(emptyIndex)) {
+            children.add(new PuzzleState(swapTiles(
+                tiles, emptyIndex, emptyIndex - 1), this.heuristic));
+        }
+        if (!isRightColumn(emptyIndex)) {
+            children.add(new PuzzleState(swapTiles(
+                tiles, emptyIndex, emptyIndex + 1), this.heuristic));
+        }
+        if (!isTopRow(emptyIndex)) {
+            children.add(new PuzzleState(swapTiles(
+                tiles, emptyIndex, emptyIndex - 4), this.heuristic));
+        }
+        if (!isBottomRow(emptyIndex)) {
+            children.add(new PuzzleState(swapTiles(
+                tiles, emptyIndex, emptyIndex + 4), this.heuristic));
+        }
+        return children;
+    }
+
+    private void calculateCost() {
+        switch (this.heuristic) {
+            case COUNT_MISPLACED:
+                calculateMisplacedCost();
+            case SUM_DISTANCES:
+                calculateDistanceCost();
+        }
+    }
+
+    private void calculateMisplacedCost() {
+        this.cost = 0;
+        String goal = "b12 345 678";
+        for (int i = 0; i < goal.length(); i++) {
+            if (this.tiles.charAt(i) != goal.charAt(i) && goal.charAt(i) != ' ') {
+                this.cost++;
+            }
+        }
+    }
+
+    private void calculateDistanceCost() {
+        this.cost = 0;
+        char[] tiles = this.tiles.replace(" ", "").replace("b", "0").toCharArray();
+        int xDist = 0;
+        int yDist = 0;
+        for (int i = 0; i < tiles.length; i++) {
+            int tileVal = Character.getNumericValue(tiles[i]);
+            if (0 < tileVal) {
+                xDist = Math.abs(tileVal % 3 - i % 3);
+                yDist = Math.abs(tileVal / 3 - i / 3);
+                System.out.println(tileVal + " at " + i + " had dist " + (xDist + yDist));
+                this.cost += (xDist + yDist);
+            }
+        }
     }
 
     private boolean isLeftColumn(int i) {
@@ -130,10 +147,10 @@ public class PuzzleState {
     }
 
     private boolean isBottomRow(int i) {
-        return (8 <= i && i <= 10);
+        return (6 <= i && i <= 8);
     }
 
-    private String swapChars(String s, int i, int j) {
+    private String swapTiles(String s, int i, int j) {
         char[] c = s.toCharArray();
 
         char temp = c[i];
@@ -155,11 +172,11 @@ public class PuzzleState {
         Character[] validTiles = { 'b','1','2','3','4','5','6','7','8' };
         HashSet<Character> remainingTiles =
             new HashSet<Character>(Arrays.asList(validTiles));
-        
+
         if (11 < tiles.length()) {
             throw new TileStringException();
         }
-        
+
         for (int i = 0; i < tiles.length(); i++) {
             if (0 == (i + 1) % 4) {
                 if (' ' != tiles.charAt(i)) {
