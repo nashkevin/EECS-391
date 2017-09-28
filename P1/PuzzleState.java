@@ -24,6 +24,14 @@ public class PuzzleState implements Comparable<PuzzleState> {
     /**
      * Constructs a PuzzleState given an arrangement of tiles
      * @param  tiles      the tile arrangement in form "b12 345 678"
+     */
+    public PuzzleState(String tiles) {
+        this(tiles, Heuristic.SUM_DISTANCES);
+    }
+    
+    /**
+     * Constructs a PuzzleState given an arrangement of tiles
+     * @param  tiles      the tile arrangement in form "b12 345 678"
      * @param  heuristic  TODO: describe
      */
     public PuzzleState(String tiles, Heuristic heuristic) {

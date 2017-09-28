@@ -1,5 +1,5 @@
 /**
- * Puzzle
+ * Parser
  *
  * @author   Kevin Nash (kjn33)
  * @version  2017.9.27
@@ -16,17 +16,20 @@ import java.util.Scanner;
 
 public class Parser {
     
-    public enum Command {
+    private enum Command {
         SETSTATE, RANDOMIZESTATE, PRINTSTATE, MOVE, SOLVE, MAXNODES
-    };
+    }
+    
+    private Puzzle puzzle;
     
     public static void main (String[] args) throws IOException, FileNotFoundException {
+        Parser p = new Parser();
         if (1 == args.length) {
             BufferedReader br = new BufferedReader(new FileReader(new File(args[0])));
             for (String command; (command = br.readLine()) != null; ) {
                 try {
                     System.out.println("$ " + command);
-                    performCommand(tokenizeCommand(command));
+                    p.performCommand(command);
                 }
                 catch (IllegalArgumentException e) {
                     System.err.println("Invalid input");
@@ -37,22 +40,22 @@ public class Parser {
         else {
             Scanner scan = new Scanner(System.in);
             System.out.print("$ ");
-            String[] command = tokenizeCommand(scan.nextLine());
+            String[] command = p.tokenizeCommand(scan.nextLine());
             while (!command[0].equalsIgnoreCase("exit")) {
                 try {
-                    performCommand(command);
+                    p.performCommand(command);
                 }
                 catch (IllegalArgumentException e) {
                     System.err.println("Invalid input");
                 }
                 System.out.print("$ ");
-                command = tokenizeCommand(scan.nextLine());
+                command = p.tokenizeCommand(scan.nextLine());
             } 
             scan.close();
         }
     }
     
-    private static String[] tokenizeCommand(String command) {
+    private String[] tokenizeCommand(String command) {
         String regex = "\"([^\"]*)\"|(\\S+)";
         Matcher m = Pattern.compile(regex).matcher(command);
         LinkedList<String> tokens = new LinkedList<String>();
@@ -63,11 +66,17 @@ public class Parser {
         return tokens.toArray(new String[tokens.size()]);
     }
     
-    private static void performCommand(String[] command) {
+    private void performCommand(String command) {
+        performCommand(tokenizeCommand(command));
+    }
+    
+    private void performCommand(String[] command) {
         switch (Command.valueOf(command[0].toUpperCase())) {
             case SETSTATE:
+                this.puzzle = new Puzzle(command[1]);
                 break;
             case RANDOMIZESTATE:
+                this.puzzle = new Puzzle();
                 break;
             case PRINTSTATE:
                 break;
