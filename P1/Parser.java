@@ -19,7 +19,7 @@ import java.util.Scanner;
 public class Parser {
     
     private enum Command {
-        SETSTATE, RANDOMIZESTATE, PRINTSTATE, MOVE, SOLVE, MAXNODES
+        SETSTATE, RANDOMIZESTATE, PRINTSTATE, MOVE, SOLVE, MAXNODES, NEWRANDOM
     }
     
     private Puzzle puzzle;
@@ -85,10 +85,13 @@ public class Parser {
                 printState();
                 break;
             case MOVE:
-                break;
+                move(command[1].toLowerCase());
             case SOLVE:
                 break;
             case MAXNODES:
+                break;
+            case NEWRANDOM:
+                this.puzzle = new Puzzle(Puzzle.generateRandomTileString());
                 break;
         }
     }
@@ -99,6 +102,29 @@ public class Parser {
         }
         catch (NullPointerException e) {
             System.err.println("No state has been set for this puzzle");
+        }
+    }
+    
+    private void move(String direction) {
+        try {
+            if (direction.equals("up")) {
+                this.puzzle.moveUp();
+            }
+            else if (direction.equals("down")) {
+                this.puzzle.moveDown();
+            }
+            else if (direction.equals("left")) {
+                this.puzzle.moveLeft();
+            }
+            else if (direction.equals("right")) {
+                this.puzzle.moveRight();
+            }
+            else {
+                System.err.println("Illegal move");
+            }
+        }
+        catch (IndexOutOfBoundsException e) {
+            System.err.println("Illegal move");
         }
     }
 }

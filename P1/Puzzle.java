@@ -45,6 +45,64 @@ public class Puzzle {
         }
     }
     
+    public void moveUp() {
+        int emptyIndex = this.state.findEmptyTile();
+        if (!this.state.isTopRow(emptyIndex)) {
+            String tiles = this.state.swapTiles(this.state.getTiles(),
+                                                emptyIndex, emptyIndex - 4);
+            this.state = new PuzzleState(tiles, this.state.getHeuristic());
+        }
+        else {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+    
+    public void moveDown() {
+        int emptyIndex = this.state.findEmptyTile();
+        if (!this.state.isBottomRow(emptyIndex)) {
+            String tiles = this.state.swapTiles(this.state.getTiles(),
+                                                emptyIndex, emptyIndex + 4);
+            this.state = new PuzzleState(tiles, this.state.getHeuristic());
+        }
+        else {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+    
+    public void moveLeft() {
+        int emptyIndex = this.state.findEmptyTile();
+        if (!this.state.isLeftColumn(emptyIndex)) {
+            String tiles = this.state.swapTiles(this.state.getTiles(),
+                                                emptyIndex, emptyIndex - 1);
+            this.state = new PuzzleState(tiles, this.state.getHeuristic());
+        }
+        else {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+    
+    public void moveRight() {
+        int emptyIndex = this.state.findEmptyTile();
+        if (!this.state.isRightColumn(emptyIndex)) {
+            String tiles = this.state.swapTiles(this.state.getTiles(),
+                                                emptyIndex, emptyIndex + 1);
+            this.state = new PuzzleState(tiles, this.state.getHeuristic());
+        }
+        else {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+    
+    public void beamSearch(int k) {
+        // setup initial beam
+        TreeSet<PuzzleState> allChildren = new TreeSet<PuzzleState>();
+        TreeSet<PuzzleState> children = this.state.generateChildren();
+        for (int i = 0; i < k && !children.isEmpty(); i++) {
+            allChildren.add(children.pollFirst());
+        }
+        for (PuzzleState
+    }
+    
     public static String generateRandomTileString() {
         ArrayList<String> tiles = new ArrayList<String>(Arrays.asList(
             "b","1","2","3","4","5","6","7","8"

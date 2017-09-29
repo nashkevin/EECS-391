@@ -54,6 +54,10 @@ public class PuzzleState implements Comparable<PuzzleState> {
     public String getTiles() {
         return this.tiles;
     }
+    
+    public Heuristic getHeuristic() {
+        return this.heuristic;
+    }
 
     /**
      * Returns a String representation of the puzzle state
@@ -66,7 +70,9 @@ public class PuzzleState implements Comparable<PuzzleState> {
 
     @Override
     public int compareTo(PuzzleState that) {
-        // offset by 1 so that TreeSet does not falsely abandon "duplicates"
+        if (this.equals(that)) {
+            return 0;
+        }
         return (this.cost - that.cost) + 1;
     }
 
@@ -80,14 +86,7 @@ public class PuzzleState implements Comparable<PuzzleState> {
      */
     public TreeSet<PuzzleState> generateChildren() {
         TreeSet<PuzzleState> children = new TreeSet<PuzzleState>();
-
-        // find the empty tile
-        int emptyIndex = -1;
-        for (int i = 0; i < tiles.length(); i++) {
-            if ('b' == tiles.charAt(i)) {
-                emptyIndex = i;
-            }
-        }
+        int emptyIndex = findEmptyTile();
 
         // swap the empty tile with tiles orthoganal to it
         if (!isLeftColumn(emptyIndex)) {
@@ -107,6 +106,16 @@ public class PuzzleState implements Comparable<PuzzleState> {
                 tiles, emptyIndex, emptyIndex + 4), this.heuristic));
         }
         return children;
+    }
+    
+    public int findEmptyTile() {
+        int emptyIndex = -1;
+        for (int i = 0; i < this.tiles.length(); i++) {
+            if ('b' == this.tiles.charAt(i)) {
+                emptyIndex = i;
+            }
+        }
+        return emptyIndex;
     }
     
     /**
@@ -139,6 +148,32 @@ public class PuzzleState implements Comparable<PuzzleState> {
         if (!remainingTiles.isEmpty()) {
             throw new TileStringException();
         }
+    }
+    
+    public String swapTiles(String s, int i, int j) {
+        char[] c = s.toCharArray();
+
+        char temp = c[i];
+        c[i] = c[j];
+        c[j] = temp;
+
+        return new String(c);
+    }
+    
+    public boolean isLeftColumn(int i) {
+        return (0 == i % 4);
+    }
+
+    public boolean isRightColumn(int i) {
+        return (0 == (i - 2) % 4);
+    }
+
+    public boolean isTopRow(int i) {
+        return (0 <= i && i <= 2);
+    }
+
+    public boolean isBottomRow(int i) {
+        return (8 <= i && i <= 10);
     }
 
     private void calculateCost() {
@@ -173,31 +208,5 @@ public class PuzzleState implements Comparable<PuzzleState> {
                 this.cost += (xDist + yDist);
             }
         }
-    }
-
-    private boolean isLeftColumn(int i) {
-        return (0 == i % 4);
-    }
-
-    private boolean isRightColumn(int i) {
-        return (0 == (i - 2) % 4);
-    }
-
-    private boolean isTopRow(int i) {
-        return (0 <= i && i <= 2);
-    }
-
-    private boolean isBottomRow(int i) {
-        return (8 <= i && i <= 10);
-    }
-
-    private String swapTiles(String s, int i, int j) {
-        char[] c = s.toCharArray();
-
-        char temp = c[i];
-        c[i] = c[j];
-        c[j] = temp;
-
-        return new String(c);
     }
 }
