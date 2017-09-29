@@ -17,7 +17,7 @@ public class Puzzle {
     
     private PuzzleState state;
     
-    private int maxNodes;
+    private int maxNodes = 99999;
     
     public Puzzle() {
         this("b12 345 678");
@@ -29,6 +29,10 @@ public class Puzzle {
     
     public PuzzleState getState() {
         return this.state;
+    }
+
+    public setMaxNodes(int n) {
+        this.maxNodes = n;
     }
     
     public void scrambleGoal(int maxSteps) {
@@ -94,13 +98,31 @@ public class Puzzle {
     }
     
     public void beamSearch(int k) {
-        // setup initial beam
-        TreeSet<PuzzleState> allChildren = new TreeSet<PuzzleState>();
-        TreeSet<PuzzleState> children = this.state.generateChildren();
-        for (int i = 0; i < k && !children.isEmpty(); i++) {
-            allChildren.add(children.pollFirst());
+        int counter = 1;
+        TreeSet<PuzzleState> beam = new TreeSet<PuzzleState>();
+        beam.add(this.state);
+        TreeSet<PuzzleState> nextPly = new TreeSet<PuzzleState>();
+        
+        while (0 < this.state.getCost() && counter < this.maxNodes) {
+            for (PuzzleState s1 : beam) {
+                TreeSet<PuzzleState> children = s1.generateChildren();
+                for (PuzzleState s2 : children) {
+                    nextPly.add(s2);
+                    counter++;
+                }
+            }
+            beam.clear();
+            for (int i = 0; i < k && !nextPly.isEmpty(); i++) {
+                beam.add(nextPly.pollFirst());
+            }
+            this.state = beam.first();
         }
-        for (PuzzleState
+        if (0 == this.state.getCost()) {
+            System.out.println("Solved with " + counter + " node(s)");
+        }
+        else {
+            System.err.println("Failed to solve after " + counter + " node(s)");
+        }
     }
     
     public static String generateRandomTileString() {
