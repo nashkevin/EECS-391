@@ -4,6 +4,8 @@
  * @author   Kevin Nash (kjn33)
  * @version  2017.9.27
  */
+package P1;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -77,8 +79,10 @@ public class Parser {
                 break;
             case RANDOMIZESTATE:
                 this.puzzle = new Puzzle();
+                this.puzzle.scrambleGoal(Integer.parseInt(command[1]));
                 break;
             case PRINTSTATE:
+                printState();
                 break;
             case MOVE:
                 break;
@@ -86,6 +90,15 @@ public class Parser {
                 break;
             case MAXNODES:
                 break;
+        }
+    }
+    
+    private void printState() {
+        try {
+            System.out.println(this.puzzle.getState().toString());
+        }
+        catch (NullPointerException e) {
+            System.err.println("No state has been set for this puzzle");
         }
     }
 }

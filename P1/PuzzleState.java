@@ -4,6 +4,8 @@
  * @author   Kevin Nash (kjn33)
  * @version  2017.9.26
  */
+package P1;
+
 import java.lang.Math;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -59,7 +61,7 @@ public class PuzzleState implements Comparable<PuzzleState> {
      */
     @Override
     public String toString() {
-        return this.tiles.replace(' ', '\n');
+        return this.tiles/*.replace(' ', '\n')*/;
     }
 
     @Override
@@ -106,6 +108,38 @@ public class PuzzleState implements Comparable<PuzzleState> {
         }
         return children;
     }
+    
+    /**
+     * Throws an exception if the given tile string is not valid
+     */
+    public static void validateTileString(String tiles) {
+        class TileStringException extends RuntimeException {
+            TileStringException() {
+                super("The tile string is not in the correct format");
+            }
+        }
+        Character[] validTiles = { 'b','1','2','3','4','5','6','7','8' };
+        HashSet<Character> remainingTiles =
+            new HashSet<Character>(Arrays.asList(validTiles));
+
+        if (11 < tiles.length()) {
+            throw new TileStringException();
+        }
+
+        for (int i = 0; i < tiles.length(); i++) {
+            if (0 == (i + 1) % 4) {
+                if (' ' != tiles.charAt(i)) {
+                    throw new TileStringException();
+                }
+            }
+            else if (!remainingTiles.remove(tiles.charAt(i))) {
+                throw new TileStringException();
+            }
+        }
+        if (!remainingTiles.isEmpty()) {
+            throw new TileStringException();
+        }
+    }
 
     private void calculateCost() {
         switch (this.heuristic) {
@@ -136,7 +170,6 @@ public class PuzzleState implements Comparable<PuzzleState> {
             if (0 < tileVal) {
                 xDist = Math.abs(tileVal % 3 - i % 3);
                 yDist = Math.abs(tileVal / 3 - i / 3);
-                System.out.println(tileVal + " at " + i + " had dist " + (xDist + yDist));
                 this.cost += (xDist + yDist);
             }
         }
@@ -155,7 +188,7 @@ public class PuzzleState implements Comparable<PuzzleState> {
     }
 
     private boolean isBottomRow(int i) {
-        return (6 <= i && i <= 8);
+        return (8 <= i && i <= 10);
     }
 
     private String swapTiles(String s, int i, int j) {
@@ -166,37 +199,5 @@ public class PuzzleState implements Comparable<PuzzleState> {
         c[j] = temp;
 
         return new String(c);
-    }
-
-    /**
-     * Throws an exception if the given tile string is not valid
-     */
-    private void validateTileString(String tiles) {
-        class TileStringException extends RuntimeException {
-            TileStringException() {
-                super("The tile string is not in the correct format");
-            }
-        }
-        Character[] validTiles = { 'b','1','2','3','4','5','6','7','8' };
-        HashSet<Character> remainingTiles =
-            new HashSet<Character>(Arrays.asList(validTiles));
-
-        if (11 < tiles.length()) {
-            throw new TileStringException();
-        }
-
-        for (int i = 0; i < tiles.length(); i++) {
-            if (0 == (i + 1) % 4) {
-                if (' ' != tiles.charAt(i)) {
-                    throw new TileStringException();
-                }
-            }
-            else if (!remainingTiles.remove(tiles.charAt(i))) {
-                throw new TileStringException();
-            }
-        }
-        if (!remainingTiles.isEmpty()) {
-            throw new TileStringException();
-        }
     }
 }
