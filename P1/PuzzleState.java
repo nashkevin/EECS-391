@@ -71,6 +71,10 @@ public class PuzzleState implements Comparable<PuzzleState> {
     public int getGval() {
         return this.gVal;
     }
+    
+    public void setGval(int val) {
+        this.gVal = val;
+    }
 
     public String getTiles() {
         return this.tiles;

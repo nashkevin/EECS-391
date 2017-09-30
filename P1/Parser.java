@@ -23,6 +23,7 @@ public class Parser {
     }
     
     private Puzzle puzzle;
+    private int maxNodes = -1;
     
     public static void main (String[] args) throws IOException, FileNotFoundException {
         Parser p = new Parser();
@@ -90,6 +91,7 @@ public class Parser {
                 solve(command[1].toLowerCase(), command[2].toLowerCase());
                 break;
             case MAXNODES:
+                maxNodes(command[1]);
                 break;
             case NEWRANDOM:
                 this.puzzle = new Puzzle(Puzzle.generateRandomTileString());
@@ -131,10 +133,22 @@ public class Parser {
     
     private void solve(String algorithm, String option) {
         try {
-            this.puzzle.beamSearch(Integer.parseInt(option));
+            if (0 < maxNodes) {
+                this.puzzle.setMaxNodes(maxNodes);
+            }
+            if (algorithm.equals("beam")) {
+                this.puzzle.beamSearch(Integer.parseInt(option));
+            }
+            else if (algorithm.equals("a-star")) {
+                this.puzzle.aStarSearch(option);
+            }
         }
         catch (NullPointerException e) {
             System.err.println("No state has been set for this puzzle");
         }
+    }
+    
+    private void maxNodes(String maxNodes) {
+        this.maxNodes = Integer.parseInt(maxNodes);
     }
 }
