@@ -17,7 +17,7 @@ public class Puzzle {
     
     private PuzzleState state;
     
-    private int maxNodes = 99999;
+    private int maxNodes = 999999;
     
     public Puzzle() {
         this("b12 345 678");
@@ -31,7 +31,7 @@ public class Puzzle {
         return this.state;
     }
 
-    public setMaxNodes(int n) {
+    public void setMaxNodes(int n) {
         this.maxNodes = n;
     }
     
@@ -45,8 +45,9 @@ public class Puzzle {
                 children.pollLast();
             }
             this.state = children.last();
-            System.out.println(this.state);
         }
+        this.state = new PuzzleState(this.state.getTiles());
+        System.out.println(this.state);
     }
     
     public void moveUp() {
@@ -98,17 +99,19 @@ public class Puzzle {
     }
     
     public void beamSearch(int k) {
-        int counter = 1;
+        int nodeCounter = 1;
+        int plyCounter = 0;
         TreeSet<PuzzleState> beam = new TreeSet<PuzzleState>();
         beam.add(this.state);
         TreeSet<PuzzleState> nextPly = new TreeSet<PuzzleState>();
+        long startTime = System.nanoTime();
         
-        while (0 < this.state.getCost() && counter < this.maxNodes) {
+        while (0 < this.state.getHval() && nodeCounter < this.maxNodes) {
             for (PuzzleState s1 : beam) {
                 TreeSet<PuzzleState> children = s1.generateChildren();
                 for (PuzzleState s2 : children) {
                     nextPly.add(s2);
-                    counter++;
+                    nodeCounter++;
                 }
             }
             beam.clear();
@@ -116,13 +119,28 @@ public class Puzzle {
                 beam.add(nextPly.pollFirst());
             }
             this.state = beam.first();
+            System.out.println(this.state);
+            plyCounter++;
         }
-        if (0 == this.state.getCost()) {
-            System.out.println("Solved with " + counter + " node(s)");
+        
+        long endTime = System.nanoTime();
+        String message;
+        if (0 == this.state.getHval()) {
+            message = "Solved with ";
         }
         else {
-            System.err.println("Failed to solve after " + counter + " node(s)");
+            message = "Failed to solve after ";
         }
+        long elapsedTime = (endTime - startTime) / 1000000;
+        message += nodeCounter + " node(s)";
+        message += ", " + plyCounter + " ply(s)";
+        message += ", " + this.state.getGval() + " step(s)";
+        message += ", " + elapsedTime + " ms elapsed";
+        System.out.println(message);
+    }
+    
+    public void aStarSearch(PuzzleState.Heuristic heuristic) {
+        ;
     }
     
     public static String generateRandomTileString() {

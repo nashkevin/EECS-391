@@ -43,7 +43,7 @@ public class Parser {
             Scanner scan = new Scanner(System.in);
             System.out.print("$ ");
             String[] command = p.tokenizeCommand(scan.nextLine());
-            while (!command[0].equalsIgnoreCase("exit")) {
+            while (0 < command.length && !command[0].equalsIgnoreCase("exit")) {
                 try {
                     p.performCommand(command);
                 }
@@ -87,6 +87,7 @@ public class Parser {
             case MOVE:
                 move(command[1].toLowerCase());
             case SOLVE:
+                solve(command[1].toLowerCase(), command[2].toLowerCase());
                 break;
             case MAXNODES:
                 break;
@@ -125,6 +126,15 @@ public class Parser {
         }
         catch (IndexOutOfBoundsException e) {
             System.err.println("Illegal move");
+        }
+    }
+    
+    private void solve(String algorithm, String option) {
+        try {
+            this.puzzle.beamSearch(Integer.parseInt(option));
+        }
+        catch (NullPointerException e) {
+            System.err.println("No state has been set for this puzzle");
         }
     }
 }

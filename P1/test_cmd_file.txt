@@ -1,5 +1,24 @@
-move 1
-move 2
-groove 2
-groove 2
-move 3
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4
+setstate "174 825 36b"
+solve beam 4

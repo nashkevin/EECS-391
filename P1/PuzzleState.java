@@ -18,8 +18,8 @@ public class PuzzleState implements Comparable<PuzzleState> {
     /** The arrangement of the puzzle tiles **/
     private String tiles;
 
-    /** g **/
-    private byte cost = Byte.MAX_VALUE;
+    private byte hVal = Byte.MAX_VALUE;
+    private int gVal = 0;
 
     private Heuristic heuristic;
 
@@ -40,15 +40,36 @@ public class PuzzleState implements Comparable<PuzzleState> {
         validateTileString(tiles);
         this.tiles = tiles;
         this.heuristic = heuristic;
-        calculateCost();
+        calculateHval();
+    }
+    
+    /**
+     * Constructs a PuzzleState given an arrangement of tiles
+     * @param  tiles      the tile arrangement in form "b12 345 678"
+     * @param  heuristic  TODO: describe
+     */
+    public PuzzleState(String tiles, Heuristic heuristic, int gVal) {
+        validateTileString(tiles);
+        this.tiles = tiles;
+        this.heuristic = heuristic;
+        this.gVal = gVal;
+        calculateHval();
     }
 
     /**
-     * Returns the cost associated with this state
-     * @return  cost
+     * Returns h(n), the predicted cost of this state
+     * @return  hVal
      */
-    public byte getCost() {
-        return this.cost;
+    public byte getHval() {
+        return this.hVal;
+    }
+    
+    /**
+     * Returns g(n), the existing cost of this state
+     * @return  gVal
+     */
+    public int getGval() {
+        return this.gVal;
     }
 
     public String getTiles() {
@@ -73,7 +94,8 @@ public class PuzzleState implements Comparable<PuzzleState> {
         if (this.equals(that)) {
             return 0;
         }
-        return (this.cost - that.cost) + 1;
+        
+        return (this.hVal - that.hVal) + 1;
     }
 
     public boolean equals(PuzzleState that) {
@@ -91,19 +113,23 @@ public class PuzzleState implements Comparable<PuzzleState> {
         // swap the empty tile with tiles orthoganal to it
         if (!isLeftColumn(emptyIndex)) {
             children.add(new PuzzleState(swapTiles(
-                tiles, emptyIndex, emptyIndex - 1), this.heuristic));
+                tiles, emptyIndex, emptyIndex - 1),
+                this.heuristic, this.gVal + 1));
         }
         if (!isRightColumn(emptyIndex)) {
             children.add(new PuzzleState(swapTiles(
-                tiles, emptyIndex, emptyIndex + 1), this.heuristic));
+                tiles, emptyIndex, emptyIndex + 1),
+                this.heuristic, this.gVal + 1));
         }
         if (!isTopRow(emptyIndex)) {
             children.add(new PuzzleState(swapTiles(
-                tiles, emptyIndex, emptyIndex - 4), this.heuristic));
+                tiles, emptyIndex, emptyIndex - 4),
+                this.heuristic, this.gVal + 1));
         }
         if (!isBottomRow(emptyIndex)) {
             children.add(new PuzzleState(swapTiles(
-                tiles, emptyIndex, emptyIndex + 4), this.heuristic));
+                tiles, emptyIndex, emptyIndex + 4),
+                this.heuristic, this.gVal + 1));
         }
         return children;
     }
@@ -176,27 +202,27 @@ public class PuzzleState implements Comparable<PuzzleState> {
         return (8 <= i && i <= 10);
     }
 
-    private void calculateCost() {
+    private void calculateHval() {
         switch (this.heuristic) {
             case COUNT_MISPLACED:
-                calculateMisplacedCost();
+                calculateMisplacedHval();
             case SUM_DISTANCES:
-                calculateDistanceCost();
+                calculateDistanceHval();
         }
     }
 
-    private void calculateMisplacedCost() {
-        this.cost = 0;
+    private void calculateMisplacedHval() {
+        this.hVal = 0;
         String goal = "b12 345 678";
         for (int i = 0; i < goal.length(); i++) {
             if (this.tiles.charAt(i) != goal.charAt(i) && goal.charAt(i) != ' ') {
-                this.cost++;
+                this.hVal++;
             }
         }
     }
 
-    private void calculateDistanceCost() {
-        this.cost = 0;
+    private void calculateDistanceHval() {
+        this.hVal = 0;
         char[] tiles = this.tiles.replace(" ", "").replace("b", "0").toCharArray();
         int xDist = 0;
         int yDist = 0;
@@ -205,7 +231,7 @@ public class PuzzleState implements Comparable<PuzzleState> {
             if (0 < tileVal) {
                 xDist = Math.abs(tileVal % 3 - i % 3);
                 yDist = Math.abs(tileVal / 3 - i / 3);
-                this.cost += (xDist + yDist);
+                this.hVal += (xDist + yDist);
             }
         }
     }
