@@ -87,6 +87,7 @@ public class Parser {
                 break;
             case MOVE:
                 move(command[1].toLowerCase());
+                break;
             case SOLVE:
                 solve(command[1].toLowerCase(), command[2].toLowerCase());
                 break;
@@ -128,6 +129,9 @@ public class Parser {
         }
         catch (IndexOutOfBoundsException e) {
             System.err.println("Illegal move");
+        }
+        catch (NullPointerException e) {
+            System.err.println("No state has been set for this puzzle");
         }
     }
     

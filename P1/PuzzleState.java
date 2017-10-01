@@ -9,7 +9,7 @@ package P1;
 import java.lang.Math;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.TreeSet;
+import java.util.PriorityQueue;
 
 public class PuzzleState implements Comparable<PuzzleState> {
 
@@ -55,7 +55,15 @@ public class PuzzleState implements Comparable<PuzzleState> {
         this.gVal = gVal;
         calculateHval();
     }
-
+    
+    /**
+     * Returns f(n), the total cost of this state
+     * @return  fVal
+     */
+    public int getFval() {
+        return this.gVal + this.hVal;
+    }
+    
     /**
      * Returns h(n), the predicted cost of this state
      * @return  hVal
@@ -90,28 +98,34 @@ public class PuzzleState implements Comparable<PuzzleState> {
      */
     @Override
     public String toString() {
-        return this.tiles/*.replace(' ', '\n')*/;
+        return this.tiles + " (" + this.gVal + "," + this.hVal + ")" + this.heuristic/*.replace(' ', '\n')*/;
     }
 
     @Override
     public int compareTo(PuzzleState that) {
-        if (this.equals(that)) {
-            return 0;
-        }
-        
-        return (this.hVal - that.hVal) + 1;
+        return (this.getGval() - that.getGval()) + (this.getHval() - that.getHval());
     }
 
-    public boolean equals(PuzzleState that) {
-        return this.tiles.equals(that.getTiles());
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        try {
+            final PuzzleState that = (PuzzleState) obj;
+            return this.getTiles().equals(that.getTiles());
+        }
+        catch (Exception e) {
+            return false;
+        }
     }
 
     /**
      * Returns a set of PuzzleStates that can be reached from this state
      * @return  children of the state
      */
-    public TreeSet<PuzzleState> generateChildren() {
-        TreeSet<PuzzleState> children = new TreeSet<PuzzleState>();
+    public PriorityQueue<PuzzleState> generateChildren() {
+        PriorityQueue<PuzzleState> children = new PriorityQueue<PuzzleState>();
         int emptyIndex = findEmptyTile();
 
         // swap the empty tile with tiles orthoganal to it
@@ -210,12 +224,14 @@ public class PuzzleState implements Comparable<PuzzleState> {
         switch (this.heuristic) {
             case COUNT_MISPLACED:
                 calculateMisplacedHval();
+                break;
             case SUM_DISTANCES:
                 calculateDistanceHval();
+                break;
         }
     }
 
-    private void calculateMisplacedHval() {
+    public void calculateMisplacedHval() {
         this.hVal = 0;
         String goal = "b12 345 678";
         for (int i = 0; i < goal.length(); i++) {
@@ -225,7 +241,7 @@ public class PuzzleState implements Comparable<PuzzleState> {
         }
     }
 
-    private void calculateDistanceHval() {
+    public void calculateDistanceHval() {
         this.hVal = 0;
         char[] tiles = this.tiles.replace(" ", "").replace("b", "0").toCharArray();
         int xDist = 0;

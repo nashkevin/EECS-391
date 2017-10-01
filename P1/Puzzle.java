@@ -6,13 +6,13 @@
  */
 package P1;
 
+import java.lang.Math;
 import java.lang.StringBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.PriorityQueue;
-import java.util.TreeSet;
 import java.util.Random;
 
 public class Puzzle {
@@ -38,18 +38,19 @@ public class Puzzle {
     }
     
     public void scrambleGoal(int maxSteps) {
-        Random random = new Random();
         this.state = new PuzzleState("b12 345 678");
+        Random rand = new Random(maxSteps);
+        PriorityQueue<PuzzleState> children;
+        
         for (int i = 0; i < maxSteps; i++) {
-            TreeSet<PuzzleState> children = this.state.generateChildren();
-            int polls = random.nextInt(children.size());
-            for (int j = 0; j < polls; j++) {
-                children.pollLast();
+            children = this.state.generateChildren();
+            int size = children.size();
+            for (int j = 0; j < (Math.abs(rand.nextInt()) % size) + 1; j++) {
+                this.state = children.poll();
             }
-            this.state = children.last();
         }
-        this.state = new PuzzleState(this.state.getTiles());
-        System.out.println(this.state);
+        this.state = new PuzzleState(this.state.getTiles(),
+                                     this.state.getHeuristic(), 0);
     }
     
     public void moveUp() {
@@ -103,14 +104,20 @@ public class Puzzle {
     public void beamSearch(int k) {
         int nodeCounter = 1;
         int plyCounter = 0;
-        TreeSet<PuzzleState> beam = new TreeSet<PuzzleState>();
+        PriorityQueue<PuzzleState> beam =
+            new PriorityQueue<PuzzleState>(k, new Comparator<PuzzleState>() {
+            @Override
+            public int compare(PuzzleState ps1, PuzzleState ps2) {
+                return ps1.getHval() - ps2.getHval();
+            }
+        });
         beam.add(this.state);
-        TreeSet<PuzzleState> nextPly = new TreeSet<PuzzleState>();
+        PriorityQueue<PuzzleState> nextPly = new PriorityQueue<PuzzleState>();
         long startTime = System.nanoTime();
         
         while (0 < this.state.getHval() && nodeCounter < this.maxNodes) {
             for (PuzzleState s1 : beam) {
-                TreeSet<PuzzleState> children = s1.generateChildren();
+                PriorityQueue<PuzzleState> children = s1.generateChildren();
                 for (PuzzleState s2 : children) {
                     nextPly.add(s2);
                     nodeCounter++;
@@ -118,9 +125,9 @@ public class Puzzle {
             }
             beam.clear();
             for (int i = 0; i < k && !nextPly.isEmpty(); i++) {
-                beam.add(nextPly.pollFirst());
+                beam.add(nextPly.poll());
             }
-            this.state = beam.first();
+            this.state = beam.peek();
             System.out.println(this.state);
             plyCounter++;
         }
@@ -145,60 +152,63 @@ public class Puzzle {
         if (heuristic.equals("h1")) {
             this.state = new PuzzleState(this.state.getTiles(),
                                          PuzzleState.Heuristic.COUNT_MISPLACED, 0);
+        } else if (heuristic.equals("h2")) {
+            this.state = new PuzzleState(this.state.getTiles(),
+                                         PuzzleState.Heuristic.SUM_DISTANCES, 0);
+        } else {
+            System.err.println("Invalid input");
+            return;
         }
-        
         int nodeCounter = 1;
-
-        Comparator<PuzzleState> cmp = new Comparator<PuzzleState>() {
-            @Override
-            public int compare(final PuzzleState ps1, final PuzzleState ps2) {
-                int f1 = ps1.getGval() + ps1.getHval();
-                int f2 = ps2.getGval() + ps2.getHval();
-                if (f1 < f2) {
-                    return -1;
-                }
-                else if (f2 < f1) {
-                    return 1;
-                }
-                return 0;
-            }
-        };
         
-        this.state = new PuzzleState(this.state.getTiles(),
-                                     this.state.getHeuristic(), 0);
-        PriorityQueue<PuzzleState> frontier =
-            new PriorityQueue<PuzzleState>(127, cmp);
+        PriorityQueue<PuzzleState> frontier = new PriorityQueue<PuzzleState>();
+//        System.out.println("offered " + this.state + " to frontier");
         frontier.offer(new PuzzleState(this.state.getTiles(),
                                        this.state.getHeuristic(),
                                        this.state.getGval()));
-        TreeSet<PuzzleState> explored = new TreeSet<PuzzleState>();
+//        System.out.println("frontier:\n" + frontier);
+        PriorityQueue<PuzzleState> explored = new PriorityQueue<PuzzleState>();
         
         String message;
         long startTime = System.nanoTime();
         while (true) { // the textbook uses a true loop
-            if (0 == frontier.size()) {
+            if (0 == frontier.size() || maxNodes < nodeCounter) {
                 message = "Failed to solve after ";
                 break;
             }
             this.state = frontier.poll();
+            System.out.println(this.state);
+//            System.out.println("popped " + this.state + " from frontier");
+//            System.out.println("frontier:\n" + frontier);
             if (0 == this.state.getHval()) {
                 message = "Solved with ";
                 break;
             }
+//            System.out.println("added " + this.state + " to explored");
             explored.add(new PuzzleState(this.state.getTiles(),
                                          this.state.getHeuristic(),
                                          this.state.getGval()));
-            TreeSet<PuzzleState> children = this.state.generateChildren();
+//            System.out.println("explored:\n" + explored);
+            PriorityQueue<PuzzleState> children = this.state.generateChildren();
+//            System.out.println("children:\n" + children);
             for (PuzzleState child : children) {
+//                System.out.println("explored contains " + child + "? " + explored.contains(child));
+//                System.out.println("frontier contains " + child + "? " + frontier.contains(child));
                 if (!explored.contains(child) && !frontier.contains(child)) {
-                    frontier.offer(new PuzzleState(this.state.getTiles(),
-                                                   this.state.getHeuristic(),
-                                                   this.state.getGval()));
+//                    System.out.println("offered " + child + " to frontier");
+                    frontier.offer(new PuzzleState(child.getTiles(),
+                                                   child.getHeuristic(),
+                                                   child.getGval()));
+                    
                 }
                 else if (frontier.contains(child)) {
-                    for (PuzzleState ps : frontier) {
+                    PuzzleState[] temp = new PuzzleState[frontier.size()];
+                    temp = frontier.toArray(temp);
+                    for (PuzzleState ps : temp) {
                         if (child.equals(ps) && child.getGval() < ps.getGval()) {
-                            ps.setGval(child.getGval());
+//                            System.out.println("updated frontier from " + ps + " gVal " + ps.getGval() + " to " + child + " gval " + child.getGval());
+                            frontier.remove(ps);
+                            frontier.offer(child);
                         }
                     }
                 }
@@ -211,6 +221,7 @@ public class Puzzle {
         message += ", " + this.state.getGval() + " step(s)";
         message += ", " + elapsedTime + " ms elapsed";
         System.out.println(message);
+        this.state = new PuzzleState(this.state.getTiles(), this.state.getHeuristic(), 0);
     }
     
     public static String generateRandomTileString() {
