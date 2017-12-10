@@ -1,0 +1,12 @@
+randomizeState 5
+printState
+solve beam 10
+printState
+randomizeState 5
+printState
+solve a-star h1
+printState
+randomizeState 5
+printState
+solve a-star h2
+printState

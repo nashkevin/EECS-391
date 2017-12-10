@@ -1,0 +1,30 @@
+newRandom
+solve beam 10
+newRandom
+solve a-star h1
+newRandom
+solve a-star h2
+newRandom
+solve beam 10
+newRandom
+solve a-star h1
+newRandom
+solve a-star h2
+newRandom
+solve beam 10
+newRandom
+solve a-star h1
+newRandom
+solve a-star h2
+newRandom
+solve beam 10
+newRandom
+solve a-star h1
+newRandom
+solve a-star h2
+newRandom
+solve beam 10
+newRandom
+solve a-star h1
+newRandom
+solve a-star h2

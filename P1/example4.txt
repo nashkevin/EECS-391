@@ -1,0 +1,9 @@
+setState "724 5b6 831"
+solve beam 1
+printState
+setState "724 5b6 831"
+solve beam 10
+printState
+setState "724 5b6 831"
+solve beam 100
+printState

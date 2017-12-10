@@ -1,0 +1,9 @@
+setState "b12 345 678"
+solve beam 10
+printState
+setState "b12 345 678"
+solve a-star h1
+printState
+setState "b12 345 678"
+solve a-star h2
+printState

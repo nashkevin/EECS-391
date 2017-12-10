@@ -1,8 +1,8 @@
 /**
- * Parser
+ * ECParser
  *
  * @author   Kevin Nash (kjn33)
- * @version  2017.9.30
+ * @version  2017.10.23
  */
 package P1;
 
@@ -16,17 +16,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Scanner;
 
-public class Parser {
+public class ECParser {
     
     private enum Command {
-        SETSTATE, RANDOMIZESTATE, PRINTSTATE, MOVE, SOLVE, MAXNODES, NEWRANDOM
+        SETSTATE, RANDOMIZESTATE, PRINTSTATE, SOLVE, MAXNODES
     }
     
-    private Puzzle puzzle;
+    private ECPuzzle puzzle;
     private int maxNodes = -1;
     
     public static void main (String[] args) throws IOException, FileNotFoundException {
-        Parser p = new Parser();
+        ECParser p = new ECParser();
         if (1 == args.length) {
             BufferedReader br = new BufferedReader(new FileReader(new File(args[0])));
             for (String command; (command = br.readLine()) != null; ) {
@@ -76,26 +76,25 @@ public class Parser {
     private void performCommand(String[] command) {
         switch (Command.valueOf(command[0].toUpperCase())) {
             case SETSTATE:
-                this.puzzle = new Puzzle(command[1]);
+                this.puzzle = new ECPuzzle(command[1]);
                 break;
             case RANDOMIZESTATE:
-                this.puzzle = new Puzzle();
+                this.puzzle = new ECPuzzle();
                 this.puzzle.scrambleGoal(Integer.parseInt(command[1]));
                 break;
             case PRINTSTATE:
                 printState();
                 break;
-            case MOVE:
-                move(command[1].toLowerCase());
-                break;
             case SOLVE:
-                solve(command[1].toLowerCase(), command[2].toLowerCase());
+                try {
+                    solve(command[1].toLowerCase(), command[2].toLowerCase());
+                }
+                catch (ArrayIndexOutOfBoundsException e) {
+                    solve(command[1].toLowerCase());
+                }
                 break;
             case MAXNODES:
                 maxNodes(command[1]);
-                break;
-            case NEWRANDOM:
-                this.puzzle = new Puzzle(Puzzle.generateRandomTileString());
                 break;
         }
     }
@@ -109,26 +108,12 @@ public class Parser {
         }
     }
     
-    private void move(String direction) {
+    private void solve(String algorithm) {
         try {
-            if (direction.equals("up")) {
-                this.puzzle.moveUp();
+            if (0 < maxNodes) {
+                this.puzzle.setMaxNodes(maxNodes);
             }
-            else if (direction.equals("down")) {
-                this.puzzle.moveDown();
-            }
-            else if (direction.equals("left")) {
-                this.puzzle.moveLeft();
-            }
-            else if (direction.equals("right")) {
-                this.puzzle.moveRight();
-            }
-            else {
-                System.err.println("Illegal move");
-            }
-        }
-        catch (IndexOutOfBoundsException e) {
-            System.err.println("Illegal move");
+            this.puzzle.aStarSearch();
         }
         catch (NullPointerException e) {
             System.err.println("No state has been set for this puzzle");
@@ -140,12 +125,7 @@ public class Parser {
             if (0 < maxNodes) {
                 this.puzzle.setMaxNodes(maxNodes);
             }
-            if (algorithm.equals("beam")) {
-                this.puzzle.beamSearch(Integer.parseInt(option));
-            }
-            else if (algorithm.equals("a-star")) {
-                this.puzzle.aStarSearch(option);
-            }
+            this.puzzle.beamSearch(Integer.parseInt(option));
         }
         catch (NullPointerException e) {
             System.err.println("No state has been set for this puzzle");

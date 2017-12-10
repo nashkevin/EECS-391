@@ -1,0 +1,7 @@
+maxNodes 500000
+randomizeState 5000
+solve a-star
+printState
+randomizeState 5000
+solve beam 10
+printState
