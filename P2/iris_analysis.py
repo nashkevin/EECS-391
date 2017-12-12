@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-EPSILON = 0.01
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -47,36 +46,48 @@ def classify_circular(row, x, y, radius):
 def sigmoid(x):
     return 1 / (1 + 10**(-x))
 
+def d_sigmoid(x):
+    sx = sigmoid(x)
+    return sx * (1 - sx) * 2.3025851
+
 def mean_squared_error(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
     sum_diffs = 0
     for i, row in dataset.iterrows():
         pred = sigmoid(dist_from_line(m=m, b=b, row=row))
-        sum_diffs += (classes[row["Species"]] - pred)**2
+        sum_diffs += (pred - classes[row["Species"]])**2
     return sum_diffs / len(dataset.index)
 
-def next_slope(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
-    sum_dists = 0
-    for i, row in dataset.iterrows():
-        dist = dist_from_line(m=m, b=b, row=row)
-        sum_dists += abs(classes[row["Species"]] - dist)
-        if i == 10:
-            print("dist " + str(dist_from_line(m=m, b=b, row=row)))
-            print("dist " + str(dist))
-            print("class " + str(classes[row["Species"]]))
-            print("diff " + str(abs(classes[row["Species"]] - dist)))
-    return m - EPSILON * (2 * sum_dists / 100)
+def sum_gradient(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
+    # next_m = m
+    # next_b = b
+    # for i, row in dataset.iterrows():
+    #     dist = dist_from_line(m=m, b=b, row=row)
+    #     pred = sigmoid(dist)
+    #     next_m = next_m - EPSILON * (classes[row["Species"]] - pred) * d_sigmoid(dist) * row["Petal Width"]
+    #     next_b = next_b - EPSILON * (classes[row["Species"]] - pred) * d_sigmoid(dist) * row["Petal Length"]
+    # return {"slope": next_m, "intercept": next_b}
 
-def next_intercept(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
-    sum_dists = 0
+    # grad_b = 0
+    # grad_m = 0
+    # for i, row in dataset.iterrows():
+    #     line = m * row["Petal Length"] + b
+    #     grad_b = grad_b + (line - row["Petal Width"])
+    #     grad_step = (line - row["Petal Width"]) * row["Petal Length"]
+    #     grad_m += grad_step
+    # update_m = (grad_m * 2) / len(dataset.index)
+    # update_b = (grad_b * 2) / len(dataset.index)
+    # epsilon = 0.1 / len(dataset.index)
+    # return {"slope": m - update_m * epsilon, "intercept": b - update_b * epsilon}
+    epsilon = 0.1
+    gradient = 0
     for i, row in dataset.iterrows():
         pred = sigmoid(dist_from_line(m=m, b=b, row=row))
-        error += abs(classes[row["Species"]] - pred)
-        if i == 10:
-            print("dist " + str(dist_from_line(m=m, b=b, row=row)))
-            print("pred " + str(pred))
-            print("class " + str(classes[row["Species"]]))
-            print("diff " + str(abs(classes[row["Species"]] - pred)))
-    return m - EPSILON * (2 * error / 100)
+        error = pred - classes[row["Species"]]
+        gradient += (2 / len(dataset.index)) * (1 - pred) * error
+    
+    new_m = m + epsilon * gradient
+    new_b = b - epsilon * gradient
+    return new_m, new_b
 
 def plot_linear_bound(dataset_1, dataset_2, slope, intercept,
                       show_mse=False, show_grad=False, filename=None):
@@ -110,10 +121,8 @@ def plot_linear_bound(dataset_1, dataset_2, slope, intercept,
                  fontsize=12, transform=ax.transAxes)
     if show_grad:
         gradient = sum_gradient(combined_data, slope, intercept)
-        next_b = intercept - EPSILON * gradient
-        next_m = slope + EPSILON * gradient
         x_vals = np.array(ax.get_xlim())
-        y_vals = next_b + next_m * x_vals
+        y_vals = gradient["intercept"] + gradient["slope"] * x_vals
         plt.plot(x_vals, y_vals, color="m", linestyle='-', linewidth=1)
     if filename == None:
         plt.savefig("plot_1b.pdf", bbox_inches="tight")
@@ -143,15 +152,14 @@ def plot_circular_bound(dataset_1, dataset_2, filename, x, y, r):
 def gradient_descent(dataset_all, dataset_1, dataset_2, slope, intercept):
     m = slope
     b = intercept
-    for i in range(500):
+    combined_data = pd.concat([dataset_1, dataset_2])
+    for i in range(15):
         fn = "plot_test_" + str(i) + ".pdf"
-        m = next_slope(dataset_all, m, b)
-        b = b - EPSILON * gradient
-        if i % 25 == 0:
-            print("gradient = " + str(gradient))
-            # print("m = " + str(m))
-            # print("b = " + str(b))
-            plot_linear_bound(dataset_1, dataset_2, m, b, show_mse=True, show_grad=True, filename=fn)
+        m, b = sum_gradient(combined_data, m, b)
+        if i % 1 == 0:
+            print("m = " + str(m))
+            print("b = " + str(b))
+            plot_linear_bound(dataset_1, dataset_2, m, b, show_mse=True, show_grad=False, filename=fn)
 
 def main(filename):
     # Read the file into a Pandas dataframe
@@ -247,7 +255,7 @@ def main(filename):
     plot_linear_bound(versi_data, virgi_data, 0, 1.65, show_mse=True, filename="plot_2b_2.pdf")
 
     # 2e
-    gradient_descent(iris_data, versi_data, virgi_data, 0, 1.65)
+    gradient_descent(iris_data, versi_data, virgi_data, 0, 2)
     
 
 main("irisdata.csv")
