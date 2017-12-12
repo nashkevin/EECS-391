@@ -191,7 +191,7 @@ ax.add_artist(circle)
 
 The mean squared error is given by
 \begin{equation*}
-E = \frac{1}{2}\sum_{n=1}^N\left(\boldsymbol{w}^T\boldsymbol{x}_n-c_n\right)^2
+E = \frac{1}{N}\sum_{n=1}^N\left(\boldsymbol{w}^T\boldsymbol{x}_n-c_n\right)^2
 \end{equation*}
 In our case the predicted and actual values are $\boldsymbol{w}^T\boldsymbol{x}_n$
 and $c_n$, where class of $x$ in pattern vector $\boldsymbol{x}_n$ is given by
@@ -217,15 +217,135 @@ first term. Rather than assigning a zero or a one based on the predicted class,
 we can plug distance into a modified version of the sigmoid function, shown
 below.
 \begin{equation*}
-x = \frac{1}{1+10^{-d}}
+p = \frac{1}{1+10^{-d}}
 \end{equation*}
-where $d$ is the distance from the decision boundary. By making this change,
-we qualify our predictions with a degree of confidence.
+where $d$ is the distance from the decision boundary and $p$ is the predictive
+value. $p\in[0,1]$, which changes the prediction from a discrete set of one and
+zero to a continuum from zero to one. By making this change, we qualify our
+predictions with a degree of confidence and theoretically make our MSE value
+more accurate.
+
+From now on the MSE value will be superimposed over the graph. The current
+boundary gives a value of $0.0645$.
+\begin{center}
+\includegraphics{plot_2a.pdf}
+\end{center}
+\begin{verbatim}
+if show_mse:
+    combined_data = pd.concat([dataset_1, dataset_2])
+    mse = mean_squared_error(combined_data, slope, intercept)
+    plt.text(0.85, 0.05, "MSE: %.4f" % mse, ha='center', va='center',
+             fontsize=12, transform=ax.transAxes)
+\end{verbatim}
+The mean squared error calculation is calculated like so
+\begin{verbatim}
+def mean_squared_error(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
+    sum_diffs = 0
+    for i, row in dataset.iterrows():
+        dist = dist_from_line(m=m, b=b, row=row)
+        sum_diffs += (classes[row["Species"]] -
+            classes[classify_prediction(dist)] * sigmoid(dist))**2
+    return sum_diffs / len(dataset.index)
+
+def sigmoid(x):
+    return 1 / (1 + 10**(-x))
+\end{verbatim}
  
 \subsection{Examples of Large and Small Errors}
+
+As was shown in the previous section, the MSE value for a line with $m=-0.4$, $b=3.6$ was
+quite small ($0.0645$). We can generate a large MSE value ($0.6862$) by using a positive
+slope. Here the boundary misclassifies the majority of the data points!
+\begin{verbatim}
+# Very high MSE
+plot_linear_bound(versi_data, virgi_data, 1.5, -5.5, show_mse=True, filename="plot_2b_1.pdf")
+\end{verbatim}
+\begin{center}
+\includegraphics{plot_2b_1.pdf}
+\end{center}
+To lower the MSE, we should move our parameters back to their ``approximately optimal''
+values. Let's see what a zero slope about halfway through the data gives us.
+\begin{verbatim}
+# Lower MSE
+plot_linear_bound(versi_data, virgi_data, 0, 1.65, show_mse=True, filename="plot_2b_2.pdf")
+\end{verbatim}
+\begin{center}
+\includegraphics{plot_2b_2.pdf}
+\end{center}
+$0.0889$ is much closer to our original value of $0.0645$.
+
 \subsection{Derivation of the Gradient}
+
+Starting with the mean square equation from section 2.1,
+\begin{equation*}
+E = \frac{1}{N}\sum_{n=1}^N\left(\boldsymbol{w}^T\boldsymbol{x}_n-c_n\right)^2
+\end{equation*}
+Where $E$ is the mean-squared error, $N$ is the number of data points (in this
+case 100), $\boldsymbol{w}^T$ is the vector of weights, $\boldsymbol{x}_n$ is
+the vector of data point classifications, and $c_n$ is its actual class (in
+this case species).
+
+As was previously stated, I am improving the error function with a modified
+sigmoid curve. The distance value supplied to that function is calculated with
+\begin{equation*}
+d = W_n - (w_1 \cdot L_n + w_2)
+\end{equation*}
+where $W_n$ is the petal width, $L_n$ is the petal length, $w_1$ is the first
+weight corresponding to slope, $w_2$ is the second weight corresponding to
+intercept.
+
+The modified sigmoid function is then used to get a bias term ($w_0$).
+\begin{equation*}
+w_0 = S(d) = \frac{1}{1+10^{-d}}
+\end{equation*}
+The derivative of this sigmoid function is
+\begin{equation*}
+S'(d) = S(d)\cdot(1-S(d))\cdot\text{ln}|10|
+\end{equation*}
+
+If we combine these equations, the MSE equation is written
+\begin{equation*}
+E = \frac{1}{N}\sum_{n=1}^N\left(S(W_n - (w_1 \cdot L_n + w_2))\cdot\boldsymbol{x}_n-c_n\right)^2
+\end{equation*}
+The gradient for this MSE involves differentiating its equation, as is done below.
+\begin{equation*}
+\begin{split}
+\frac{\partial E}{\partial\boldsymbol{w}} &= \frac{2}{N}(1-S(\boldsymbol{x}\boldsymbol{w}))(S(\boldsymbol{x}\boldsymbol{w})-\boldsymbol{c})\boldsymbol{x}\\
+&= \frac{2}{N}(1-\boldsymbol{p})(\boldsymbol{p}-\boldsymbol{c})\boldsymbol{x}
+\end{split}
+\end{equation*}
+At the end we replace the sigmoid function call with a vector of the predictive
+values that it returns, notated $\boldsymbol{p}$.
+
+This is the vector form. The scalar form will be shown in the next section.
+
 \subsection{Gradients in Scalar and Vector Form}
+
+We can expand the vector form of the gradient into a scalar form.
+When expanded, it looks like:
+\begin{equation*}
+\text{Scalar:\quad} \frac{\partial E}{\partial w_i} = \frac{2}{N}\sum_{n=1}^N(x_{i,n}\cdot(1-S(x_n w)\cdot(S(x_n w)-c_n))
+\end{equation*}
+\begin{equation*}
+\frac{2}{N}\sum_{n=1}^N(w_0x_{0,n}+\ldots+w_ix_{i,n}+\ldots+w_Mx_{M,n}-c_n)x_{i,n}
+\end{equation*}
+In this form the expression is summed over $N$ terms. The vector form is similar but
+does not feature the summation, since it is implicit from the use of vectors
+instead of scalar variables (e.g. $x_{i,n}$ and $\boldsymbol{x}$).
+\begin{equation*}
+\text{Vector:\quad} \frac{\partial E}{\partial\boldsymbol{w}} = \frac{2}{N}(1-S(\boldsymbol{x}\boldsymbol{w}))(S(\boldsymbol{x}\boldsymbol{w})-\boldsymbol{c})\boldsymbol{x}
+\end{equation*}
+Then to update the weight, we use an iteration function:
+\begin{equation*}
+w_i^{t+1}=w_1^t-\varepsilon\frac{\partial E}{\partial w_i}
+\end{equation*}
+Epsilon here is a small value that ensure we eventually converge on a minimum value.
+At this point the difference between one MSE and the MSE of the next step is
+negligible.
+
 \subsection{Summing the Gradient for an Ensemble of Patterns}
+
+
 
 \section{Learning a Decision Boundary Through Optimization}
 

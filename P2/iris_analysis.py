@@ -9,9 +9,10 @@ __email__   = "kjn33@case.edu"
 import sys
 import pprint
 import pandas as pd
-import numpy as numpy
+import numpy as np
 import matplotlib.pyplot as plt
 
+EPSILON = 0.01
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -54,16 +55,16 @@ def mean_squared_error(dataset, m, b, classes={"versicolor": 0, "virginica": 1})
             classes[classify_prediction(dist)] * sigmoid(dist))**2
     return sum_diffs / len(dataset.index)
 
-def line_to_coords(slope, intercept):
-    coords = {
-        "x1": 3,
-        "x2": (1 - intercept) / slope,
-        "y1": slope * 3 + intercept,
-        "y2": 1
-    }
-    return coords
+def gradient(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
+    gradient = 0
+    for i, row in dataset.iterrows():
+        dist = dist_from_line(m=m, b=b, row=row)
+        pred = classify_prediction(dist)
+        gradient += (classes[pred] * sigmoid(dist) - classes[row["Species"]]) * classes[pred]
+    return gradient
 
-def plot_linear_bound(dataset_1, dataset_2, slope, intercept, show_mse=False, filename=None):
+def plot_linear_bound(dataset_1, dataset_2, slope, intercept,
+                      show_mse=False, show_grad=False, filename=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     
@@ -78,14 +79,22 @@ def plot_linear_bound(dataset_1, dataset_2, slope, intercept, show_mse=False, fi
     if filename == None:
         plt.savefig("plot_1a.pdf", bbox_inches="tight")
 
-    coords = line_to_coords(slope, intercept)
-    plt.plot([coords["x1"], coords["x2"]], [coords["y1"], coords["y2"]],
-             color="k", linestyle="-", linewidth=1)
+    x_vals = np.array(ax.get_xlim())
+    y_vals = intercept + slope * x_vals
+    plt.plot(x_vals, y_vals, color="k", linestyle='-', linewidth=1)
     # plt.show() # debug
+    combined_data = pd.concat([dataset_1, dataset_2])
     if show_mse:
-        combined_data = pd.concat([dataset_1, dataset_2])
         mse = mean_squared_error(combined_data, slope, intercept)
-        plt.text(0.85, 0.05, "MSE: %.4f" % mse, ha='center', va='center', fontsize=12, transform=ax.transAxes)
+        plt.text(0.85, 0.05, "MSE: %.4f" % mse, ha='center', va='center',
+                 fontsize=12, transform=ax.transAxes)
+    if show_grad:
+        gradient = gradient(combined_data, slope, intercept)
+        next_b = intercept - EPSILON * gradient
+        next_m = slope - EPSILON * gradient
+        x_vals = np.array(ax.get_xlim())
+        y_vals = next_b + next_m * x_vals
+        plt.plot(x_vals, y_vals, color="m", linestyle='-', linewidth=1)
     if filename == None:
         plt.savefig("plot_1b.pdf", bbox_inches="tight")
     else:
@@ -105,7 +114,6 @@ def plot_circular_bound(dataset_1, dataset_2, filename, x, y, r):
     plt.ylabel("Petal Width (cm)")
     plt.legend(loc="upper left")
 
-    # Coords: (4.75, 1.7)
     circle = plt.Circle((x, y), r, color="k", fill=False)
     ax.add_artist(circle)
     # plt.show() # debug
@@ -196,11 +204,18 @@ def main(filename):
     virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
     plot_circular_bound(versi_data, virgi_data, "plot_1d_3.pdf", 4.0, 1.2, 1)
 
-    # Calculate the mean-squared error 2a
+    # Calculate the mean-squared error for part 2a
     plot_linear_bound(versi_data, virgi_data, -0.4, 3.6, show_mse=True, filename="plot_2a.pdf")
     
+    # Calculate a large and a small MSE value for part 2b
+    # Very high MSE
+    plot_linear_bound(versi_data, virgi_data, 1.5, -5.5, show_mse=True, filename="plot_2b_1.pdf")
+    # Lower MSE
+    plot_linear_bound(versi_data, virgi_data, 0, 1.65, show_mse=True, filename="plot_2b_2.pdf")
 
-    # data vectors, decision boundary, pattern classes
+    # 2e
+    plot_linear_bound(versi_data, virgi_data, 0, 1.65, show_mse=True, show_grad=True, filename="plot_2e.pdf")
+
     
 
 main("irisdata.csv")
