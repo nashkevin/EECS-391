@@ -165,7 +165,7 @@ the circle is \textit{mathematically} circular, \textit{not graphically} circula
 \begin{tabular}{|c|c|c|c|}
 \hline
 $x$ & $y$ & $r$ & Accuracy\\
-\hline
+\hline\hline
 $4.75$ & $1.7$ & $0.5$ & 58\%\\
 \hline
 $4.5$ & $1.2$ & $0.5$ & 79\%\\
@@ -345,13 +345,119 @@ negligible.
 
 \subsection{Summing the Gradient for an Ensemble of Patterns}
 
+We can now use a gradient to take steps that should ultimately minimize mean
+squared error. To do this, we simply combine the tools outlined above.
+Namely, we need the predictive function by which to compare the relative
+confidence in each categorization, and the derivative, which tells us how to
+improve this confidence (thereby lowering MSE).
 
+\begin{verbatim}
+def sum_gradient(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
+    epsilon = 0.1 / len(dataset.index)
+    gradient = 0
+    for i, row in dataset.iterrows():
+        pred = sigmoid(dist_from_line(m=m, b=b, row=row))
+        error = pred - classes[row["Species"]]
+        gradient += (2 / len(dataset.index)) * (1 - pred) * error
+    if m < 0:
+        new_m = m + epsilon * gradient
+    else:
+        new_m = m - epsilon * gradient
+    new_b = b - epsilon * gradient
+    return new_m, new_b
+\end{verbatim}
+
+The above function calculates the new slope and intercept for weights in the
+next step in a gradient descent. Below are function calls to plotting routines
+that produce the following plots. The plots show sequential steps (magenta)
+from an initial decision boundary (black, dashed).
+
+\begin{verbatim}
+plot_gradient_descent(versi_data, virgi_data, -0.1, 5, snapshots=5, filename="plot_2e_1.pdf")
+plot_gradient_descent(versi_data, virgi_data, -0.5, 3, snapshots=5, filename="plot_2e_2.pdf")
+\end{verbatim}
+\begin{center}
+\includegraphics{plot_2e_1.pdf}
+\includegraphics{plot_2e_2.pdf}
+\end{center}
 
 \section{Learning a Decision Boundary Through Optimization}
 
 \subsection{Implementing Gradient Descent}
+
+This section is basically the one above, since in the above plots I considered
+it more helpful to show multiple steps at once. However since this section
+covers the gradient descent implementation, I will point out that on the
+previous graphs we notice initial and final MSE values, also reproduced
+in the table below. The final value comes after 1000 steps, though not all
+steps are always necessary.
+\begin{center}
+\begin{tabular}{|r|r|r|}
+\hline
+Initial MSE & Final MSE & Reduction\\
+\hline\hline
+0.4953 & 0.1175 & 76.3\%\\
+\hline
+0.2586 & 0.1093 & 57.7\%\\
+\hline
+\end{tabular}
+\end{center}
+
+We can also take a look at the descent function.
+\begin{verbatim}
+mse_0 = mean_squared_error(combined_data, slope, intercept)
+m = slope
+b = intercept
+steps = 1000
+for i in range(steps):
+    m, b = sum_gradient(combined_data, m, b)
+    if (i == 1) or (i % (steps / snapshots) == 0):
+        # x_vals = np.array(ax.get_xlim())
+        y_vals = b + m * x_vals
+        plt.plot(x_vals, y_vals, color="m", linestyle='-', linewidth=1)
+mse_f = mean_squared_error(combined_data, m, b)
+\end{verbatim}
+First the mean squared error is calculated for the inital weights. This is
+$\text{MSE}_0$. Then we take $1000$ steps, and for every step a new gradient sum is
+calculated, $m$ and $b$ are updated and plotted. After the $1000^{\text{th}}$
+step, we calculated mean squared error once more. This is $\text{MSE}_f$.
+
+The main point here is that there can be a significant reduction in MSE by
+gradient descent.
+
 \subsection{Showing the Learning Curve}
+
+Now let us look at a learning curve for the first descent plot. This time it
+is shown with a 100 steps visible, rather than just 5. You can see how the steps
+``slow down'' as the boundary converges. Plus it might make a cool Moiré pattern
+on your screen.
+\begin{center}
+\includegraphics{plot_3b_1.pdf}
+\includegraphics{plot_3b_2.pdf}
+\end{center}
+The learning curve is shown above.
+\begin{verbatim}
+mse_vals = []
+m = slope
+b = intercept
+steps = 10000
+for i in range(steps):
+    if i % 100 == 0:
+        mse_vals.append(mean_squared_error(dataset, m, b))
+    m, b = sum_gradient(dataset, m, b)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+# mse_vals = mse_vals[int(-len(mse_vals)/2):]
+ax.scatter(x=list(range(1, len(mse_vals) + 1)), y=mse_vals, color="k", marker="|")
+plt.xlabel("Steps")
+plt.ylabel("MSE at Step")
+plt.savefig(filename, bbox_inches="tight")
+plt.close(fig)
+\end{verbatim}
+
 \subsection{Illustration with Random Weights}
+
 \subsection{Choosing the Gradient Step Size}
 \subsection{Choosing the Stopping Criterion}
 
