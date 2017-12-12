@@ -458,7 +458,75 @@ plt.close(fig)
 
 \subsection{Illustration with Random Weights}
 
+Since this section uses a random element, the results will be different
+every time the code is run. Therefore I can't comment on specifics here.
+Enjoy the plots.
+\subsubsection{Initial}
+\begin{center}
+\includegraphics{plot_3c_1.pdf}
+\includegraphics{plot_3c_2.pdf}
+\end{center}
+\subsubsection{Middle}
+\begin{center}
+\includegraphics{plot_3c_3.pdf}
+\includegraphics{plot_3c_4.pdf}
+\end{center}
+\subsubsection{Final}
+\begin{center}
+\includegraphics{plot_3c_5.pdf}
+\includegraphics{plot_3c_6.pdf}
+\end{center}
+
 \subsection{Choosing the Gradient Step Size}
+
+The gradient step size was selected similarly to an example discussed in
+lecture. It is determined by the size of the data, namely
+\begin{equation*}
+\varepsilon = \frac{0.1}{N}
+\end{equation*}
+where $N$ is the size of the dataset, in this case 100.
+This value was chosen because if the step size is too large, there is an
+increased probability that the learning will diverge. On the other hand,
+if the step size is too small, learning will take too long to converge.
+By making the step size a function of the data size, we guarantee that the
+step could adapt to a change in size of the data.
+
+For this dataset and algorithm, I found that the step size was somewhat lenient.
+I tested between 0.001 and 0.01 and both of these values worked properly.
+
 \subsection{Choosing the Stopping Criterion}
+
+I tested three different stopping criteria, keeping in mind that once the
+learning converges, there is no point in continuing further.
+
+First was to
+detect a lack of change in the mean squared error (MSE), since it seems
+reasonable to claim that once the MSE stops changing no more steps are needed.
+However in practice this assumption is not always true. If the decision boundary
+is ever completely outside of the clusters of points (\textit{all} points fall
+on one side or another), then this method will falsely detect convergence, since
+shifting the boundary will usually keep the MSE at around 0.50. Even if the
+boundary is within the data, the data are granular enough that you can sometimes
+shift the boundary without changing any classifications.
+
+Second was to detect a lack of change in an ``upstream'' variable. This method
+is more sensitive to stillness. I decided that if the boundary does not move
+at all within some degree of freedom, then the learning has converged, and it
+ended up working successfully for my code. The degree of freedom was adjusted
+over testing. A very small number was initially used, then when the runtime was
+long, it was sequentially reduced until it produced good results in an
+acceptible time.
+\begin{verbatim}
+while 0.0001 < b_2 - b:
+    (continue calculation)
+\end{verbatim}
+When this criterion is used, it stops slightly after 1300 steps.
+
+Third we can set a limit on number of steps. This is arguably the best way
+to do it if you have the empirical data to back it up. Since we are working
+with a single dataset and not in a general application, this is easy to
+calculate, however it is technically wasteful in some cases, as the
+convergence will occur before the step limit is reached, and for this reason
+I chose the second method instead.
 
 \end{document}

@@ -6,15 +6,12 @@ __date__    = "2017-12-10"
 __author__  = "Kevin Nash"
 __email__   = "kjn33@case.edu"
 
-import sys
-import pprint
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
-
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
 """ Returns the distance from point (x,y) to the line in slope-intercept form """
 def dist_from_line(x=0, y=0, m=0, b=0, row=None):
@@ -67,20 +64,49 @@ def sum_gradient(dataset, m, b, classes={"versicolor": 0, "virginica": 1}):
     new_b = b - epsilon * gradient
     return new_m, new_b
 
-def plot_learning_curve(dataset, slope, intercept, filename):
+def plot_summary(dataset_1, dataset_2):
+    # Set random weights
+    slope = -0.3184#random.uniform(-0.4, -0.1)
+    intercept = 2.2558#random.uniform(1.5, 2.5)
+    combined_data = pd.concat([dataset_1, dataset_2])
+    # Initial boundary
+    plot_linear_bound(dataset_1, dataset_2, slope, intercept, show_mse=True,
+                      filename="plot_3c_1.pdf")
+    # Initial learning
+    plot_learning_curve(combined_data, slope, intercept, "plot_3c_2.pdf", steps=1)
+    # Middle boundary
+    m = slope
+    b = intercept
+    for i in range(50):
+        m, b = sum_gradient(combined_data, m, b)
+    plot_linear_bound(dataset_1, dataset_2, m, b, show_mse=True,
+                      filename="plot_3c_3.pdf")
+    # Middle learning
+    plot_learning_curve(combined_data, slope, intercept, "plot_3c_4.pdf", steps=300)
+    # Final boundary
+    b_2 = 99
+    i = 0
+    while 0.0001 < b_2 - b:
+        b_2 = b
+        m, b = sum_gradient(combined_data, m, b)
+        i += 1
+    plot_linear_bound(dataset_1, dataset_2, m, b, show_mse=True,
+                      filename="plot_3c_5.pdf")
+    # Final learning
+    plot_learning_curve(combined_data, slope, intercept, "plot_3c_6.pdf", steps=i)
+
+
+def plot_learning_curve(dataset, slope, intercept, filename, steps=10000):
     mse_vals = []
     m = slope
     b = intercept
-    steps = 10000
     for i in range(steps):
-        if i % 100 == 0:
-            mse_vals.append(mean_squared_error(dataset, m, b))
+        mse_vals.append(mean_squared_error(dataset, m, b))
         m, b = sum_gradient(dataset, m, b)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    # mse_vals = mse_vals[int(-len(mse_vals)/2):]
-    ax.scatter(x=list(range(1, len(mse_vals) + 1)), y=mse_vals, color="k", marker="|")
+    ax.scatter(x=list(range(1, len(mse_vals) + 1)), y=mse_vals, color="k", marker="|",linewidths=0.01)
     plt.xlabel("Steps")
     plt.ylabel("MSE at Step")
     plt.savefig(filename, bbox_inches="tight")
@@ -192,99 +218,100 @@ def main(filename):
     versi_data = iris_data.loc[iris_data["Species"] == "versicolor"]
     virgi_data = iris_data.loc[iris_data["Species"] == "virginica"]
 
-    # # Generate plots for parts 1a and 1b
+    # Generate plots for parts 1a and 1b
     # plot_linear_bound(versi_data, virgi_data, -0.4, 3.6)
     
-    # # Classify data linearly for part 1c
-    # iris_data["Classification"] = iris_data.apply(
-    #     lambda row: classify_linear(row, -0.4, 3.6), axis=1
-    # )
-    # misclassified = pd.DataFrame(columns=iris_data.columns)
+    # Classify data linearly for part 1c
+    iris_data["Classification"] = iris_data.apply(
+        lambda row: classify_linear(row, -0.4, 3.6), axis=1
+    )
+    misclassified = pd.DataFrame(columns=iris_data.columns)
     
-    # for i, row in iris_data.iterrows():
-    #     if not row["Classification"] == row["Species"]:
-    #         misclassified.loc[len(misclassified.index)] = row
-    # print("Linear decision accuracy: {}%".format(100 - len(misclassified.index) /
-    #       len(iris_data.index) * 100))
+    for i, row in iris_data.iterrows():
+        if not row["Classification"] == row["Species"]:
+            misclassified.loc[len(misclassified.index)] = row
+    print("Linear decision accuracy: {}%".format(100 - len(misclassified.index) /
+          len(iris_data.index) * 100))
     
-    # versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
-    # virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
+    versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
+    virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
     # plot_linear_bound(versi_class, virgi_class, -0.4, 3.6, filename="plot_1c.pdf")
     
-    # # Classify data circularly for part 1d
-    # iris_data.drop("Classification", axis=1, inplace=True)
-    # iris_data["Classification"] = iris_data.apply(
-    #     lambda row: classify_circular(row, 4.75, 1.7, 0.5), axis=1
-    # )
-    # misclassified = pd.DataFrame(columns=iris_data.columns)
+    # Classify data circularly for part 1d
+    iris_data.drop("Classification", axis=1, inplace=True)
+    iris_data["Classification"] = iris_data.apply(
+        lambda row: classify_circular(row, 4.75, 1.7, 0.5), axis=1
+    )
+    misclassified = pd.DataFrame(columns=iris_data.columns)
     
-    # for i, row in iris_data.iterrows():
-    #     if not row["Classification"] == row["Species"]:
-    #         misclassified.loc[len(misclassified.index)] = row
+    for i, row in iris_data.iterrows():
+        if not row["Classification"] == row["Species"]:
+            misclassified.loc[len(misclassified.index)] = row
     
-    # print("Circular decision accuracy (1): {}%".format(100 - len(misclassified.index) /
-    #       len(iris_data.index) * 100))
+    print("Circular decision accuracy (1): {}%".format(100 - len(misclassified.index) /
+          len(iris_data.index) * 100))
     
-    # versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
-    # virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
+    versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
+    virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
     # plot_circular_bound(versi_data, virgi_data, "plot_1d_1.pdf", 4.75, 1.7, 0.5)
 
-    # # Second circle
-    # iris_data.drop("Classification", axis=1, inplace=True)
-    # iris_data["Classification"] = iris_data.apply(
-    #     lambda row: classify_circular(row, 4.5, 1.2, 0.5), axis=1
-    # )
-    # misclassified = pd.DataFrame(columns=iris_data.columns)
+    # Second circle
+    iris_data.drop("Classification", axis=1, inplace=True)
+    iris_data["Classification"] = iris_data.apply(
+        lambda row: classify_circular(row, 4.5, 1.2, 0.5), axis=1
+    )
+    misclassified = pd.DataFrame(columns=iris_data.columns)
     
-    # for i, row in iris_data.iterrows():
-    #     if not row["Classification"] == row["Species"]:
-    #         misclassified.loc[len(misclassified.index)] = row
+    for i, row in iris_data.iterrows():
+        if not row["Classification"] == row["Species"]:
+            misclassified.loc[len(misclassified.index)] = row
     
-    # print("Circular decision accuracy (2): {}%".format(100 - len(misclassified.index) /
-    #       len(iris_data.index) * 100))
+    print("Circular decision accuracy (2): {}%".format(100 - len(misclassified.index) /
+          len(iris_data.index) * 100))
     
-    # versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
-    # virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
+    versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
+    virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
     # plot_circular_bound(versi_data, virgi_data, "plot_1d_2.pdf", 4.5, 1.2, 0.5)
 
-    # # Third circle
-    # iris_data.drop("Classification", axis=1, inplace=True)
-    # iris_data["Classification"] = iris_data.apply(
-    #     lambda row: classify_circular(row, 4.0, 1.2, 1), axis=1
-    # )
-    # misclassified = pd.DataFrame(columns=iris_data.columns)
+    # Third circle
+    iris_data.drop("Classification", axis=1, inplace=True)
+    iris_data["Classification"] = iris_data.apply(
+        lambda row: classify_circular(row, 4.0, 1.2, 1), axis=1
+    )
+    misclassified = pd.DataFrame(columns=iris_data.columns)
     
-    # for i, row in iris_data.iterrows():
-    #     if not row["Classification"] == row["Species"]:
-    #         misclassified.loc[len(misclassified.index)] = row
+    for i, row in iris_data.iterrows():
+        if not row["Classification"] == row["Species"]:
+            misclassified.loc[len(misclassified.index)] = row
     
-    # print("Circular decision accuracy (3): {}%".format(100 - len(misclassified.index) /
-    #       len(iris_data.index) * 100))
+    print("Circular decision accuracy (3): {}%".format(100 - len(misclassified.index) /
+          len(iris_data.index) * 100))
     
-    # versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
-    # virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
+    versi_class = misclassified.loc[misclassified["Species"] == "versicolor"]
+    virgi_class = misclassified.loc[misclassified["Species"] == "virginica"]
     # plot_circular_bound(versi_data, virgi_data, "plot_1d_3.pdf", 4.0, 1.2, 1)
 
-    # # Calculate the mean-squared error for part 2a
+    # Calculate the mean-squared error for part 2a
     # plot_linear_bound(versi_data, virgi_data, -0.4, 3.6, show_mse=True, filename="plot_2a.pdf")
     
-    # # Calculate a large and a small MSE value for part 2b
-    # # Very high MSE
+    # Calculate a large and a small MSE value for part 2b
+    # Very high MSE
     # plot_linear_bound(versi_data, virgi_data, 1.5, -5.5, show_mse=True, filename="plot_2b_1.pdf")
-    # # Lower MSE
+    # Lower MSE
     # plot_linear_bound(versi_data, virgi_data, 0, 1.65, show_mse=True, filename="plot_2b_2.pdf")
 
-    # # 2e
+    # 2e
     # plot_gradient_descent(versi_data, virgi_data, -0.1, 5, snapshots=5, filename="plot_2e_1.pdf")
     # plot_gradient_descent(versi_data, virgi_data, -0.5, 3, snapshots=5, filename="plot_2e_2.pdf")
 
-    # # 3b
-    plot_gradient_descent(versi_data, virgi_data, -0.1, 5, snapshots=100, filename="plot_3b_1.pdf")
-    plot_learning_curve(iris_data, -0.1, 5, "plot_3b_2.pdf")
+    # 3b
+    # plot_gradient_descent(versi_data, virgi_data, -0.1, 5, snapshots=100, filename="plot_3b_1.pdf")
+    # plot_learning_curve(iris_data, -0.1, 5, "plot_3b_2.pdf")
 
-main("irisdata.csv")
+    # 3c
+    plot_summary(versi_data, virgi_data)
 
 # Make function callable from CLI
-#if __name__ == "__main__":
-#    main(sys.argv[1])
+if __name__ == "__main__":
+    main("irisdata.csv")
 
